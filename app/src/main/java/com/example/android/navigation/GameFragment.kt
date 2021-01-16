@@ -23,7 +23,9 @@ import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.navigation.findNavController
 import com.example.android.navigation.databinding.FragmentGameBinding
+import kotlin.math.min
 
 class GameFragment : Fragment() {
     data class Question(
@@ -59,10 +61,11 @@ class GameFragment : Fragment() {
     lateinit var currentQuestion: Question
     lateinit var answers: MutableList<String>
     private var questionIndex = 0
-    private val numQuestions = Math.min((questions.size + 1) / 2, 3)
+    private val numQuestions = min((questions.size + 1) / 2, 5)
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
-                              savedInstanceState: Bundle?): View? {
+    override fun onCreateView(inflater: LayoutInflater,
+                              container: ViewGroup?,
+                              savedInstanceState: Bundle?): View {
 
         // Inflate the layout for this fragment
         val binding = DataBindingUtil.inflate<FragmentGameBinding>(
@@ -75,32 +78,34 @@ class GameFragment : Fragment() {
         binding.game = this
 
         // Set the onClickListener for the submitButton
-        binding.submitButton.setOnClickListener @Suppress("UNUSED_ANONYMOUS_PARAMETER")
-        { view: View ->
+        binding.submitButton.setOnClickListener @Suppress("UNUSED_ANONYMOUS_PARAMETER") {
             val checkedId = binding.questionRadioGroup.checkedRadioButtonId
+
             // Do nothing if nothing is checked (id == -1)
             if (-1 != checkedId) {
                 var answerIndex = 0
+
                 when (checkedId) {
                     R.id.secondAnswerRadioButton -> answerIndex = 1
                     R.id.thirdAnswerRadioButton -> answerIndex = 2
                     R.id.fourthAnswerRadioButton -> answerIndex = 3
                 }
-                // The first answer in the original question is always the correct one, so if our
-                // answer matches, we have the correct answer.
+
+                // The first answer in the original question is always the correct one,
+                // so if our answer matches, we have the correct answer.
                 if (answers[answerIndex] == currentQuestion.answers[0]) {
                     questionIndex++
+
                     // Advance to the next question
                     if (questionIndex < numQuestions) {
                         currentQuestion = questions[questionIndex]
                         setQuestion()
                         binding.invalidateAll()
-                    } else {
-                        // We've won!  Navigate to the gameWonFragment.
-                    }
-                } else {
-                    // Game over! A wrong answer sends us to the gameOverFragment.
-                }
+
+                    } else it.findNavController().navigate(GameFragmentDirections
+                            .actionGameFragmentToGameWonFragment(numQuestions, questionIndex))
+
+                } else it.findNavController().navigate(GameFragmentDirections.actionGameFragmentToGameOverFragment())
             }
         }
         return binding.root
